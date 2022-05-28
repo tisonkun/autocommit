@@ -55,7 +55,7 @@ def try_commit(repo: git.Repo) -> None:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--directory', help='git directories', action='append', nargs='+')
+    parser.add_argument('-d', '--directory', help='git directories', action='append', nargs='+', required=True)
     parser.add_argument('-i', '--interval', help='autocommit interval in seconds', type=int, default=30)
     parser.add_argument('-l', '--level', help='logging level', default='INFO')
     args = parser.parse_args()
