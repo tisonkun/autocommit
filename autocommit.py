@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import argparse
+import logging
 import re
 import signal
 import time
@@ -42,25 +43,35 @@ def try_commit(repo: git.Repo) -> None:
     id = uuid.uuid4().hex
     status = repo.git.status()
     if re.search('working tree clean', status):
-        print('nothing to commit, working tree clean')
+        logging.debug('Repo(%s) nothing to commit, working tree clean.', repo.working_dir)
         return
-    repo.git.add('.')
-    repo.git.commit('-m', f'autocommit {id}')
+    logging.debug('Repo(%s) ready to add and commit.', repo.working_dir)
+    try:
+        repo.git.add('.')
+        repo.git.commit('-m', f'autocommit {id}')
+    except git.exc.GitCommandError as e:
+        logging.warning('Repo(%s) conflict during committing. Error: %s', repo.working_dir, e)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--directory', help='git directories', action='append', nargs='+')
     parser.add_argument('-i', '--interval', help='autocommit interval in seconds', type=int, default=30)
+    parser.add_argument('-l', '--level', help='logging level', default='INFO')
     args = parser.parse_args()
+
+    logging.basicConfig(level=args.level.upper())
 
     interval = args.interval
     assert interval >= 0
 
     repos = [git.Repo(dir) for dir in args.directory]
 
+    logging.info('Running autocommit for repos: %s', repos)
     guard = GracefulShutdown()
     while guard.is_running:
         for repo in repos:
             try_commit(repo)
         guard.wait(interval)
+
+    logging.info('Shutting down...')
