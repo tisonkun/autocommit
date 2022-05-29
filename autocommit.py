@@ -60,16 +60,17 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--level', help='logging level', default='INFO')
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.level.upper())
+    logging.basicConfig(format='[%(levelname)s] %(asctime)s (%(name)s:%(filename)s:%(lineno)d) %(message)s', level=args.level.upper())
 
     interval = args.interval
     assert interval >= 0
 
     repos = [git.Repo(dir) for dir in args.directory]
 
-    logging.info('Running autocommit for repos: %s', repos)
+    logging.info('Running autocommit with interval: %d, for repos: %s', interval, repos)
     guard = GracefulShutdown()
     while guard.is_running:
+        logging.debug('Try committing...')
         for repo in repos:
             try_commit(repo)
         guard.wait(interval)
